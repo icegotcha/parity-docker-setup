@@ -1,0 +1,92 @@
+version: '2.1'
+services:
+  validator1:
+    build:
+      context: .
+      dockerfile: docker_authority/Dockerfile
+      args:
+        PARITY_VERSION: ${PARITY_VERSION}
+        NETWORK_NAME: ${NETWORK_NAME}
+        ID: 1
+    volumes:
+      - parity-data:/home/parity/.local/share/io.parity.ethereum/chains/${NETWORK_NAME}/db
+      - ./parity/config:/parity/config
+    command: --config /parity/config/authority.toml
+      --engine-signer 0x2492aeec34a6295a502e43b1710a4cf43f374945
+      --unlock 0x2492aeec34a6295a502e43b1710a4cf43f374945
+      --ws-interface 0.0.0.0
+      --ws-hosts all
+      --ws-origins all
+      --ws-apis all
+      --ws-port 8514
+      --jsonrpc-interface all
+      --jsonrpc-cors all
+      --no-persistent-txqueue
+      --jsonrpc-hosts all
+      --jsonrpc-server-threads 8
+      --jsonrpc-threads 0
+      --tracing on
+      --pruning archive
+    ports:
+      - 8545:8545
+      - 8514:8514
+    networks:
+      app_net:
+        ipv4_address: 172.16.0.13
+
+  validator2:
+    build:
+      context: .
+      dockerfile: docker_authority/Dockerfile
+      args:
+        PARITY_VERSION: ${PARITY_VERSION}
+        NETWORK_NAME: ${NETWORK_NAME}
+        ID: 2
+    volumes:
+      - ./parity/config:/parity/config
+    command: --config /parity/config/authority.toml
+      --engine-signer 0xe620fcc9910af3a0c270681b836cba0d70a011a1
+      --unlock 0xe620fcc9910af3a0c270681b836cba0d70a011a1
+      --jsonrpc-interface all
+      --jsonrpc-cors all
+      --no-persistent-txqueue
+      --jsonrpc-hosts all
+      --jsonrpc-server-threads 8
+      --jsonrpc-threads 0
+      --tracing on
+      --pruning archive
+    ports:
+      - 8550:8545
+      - 8515:8514
+    networks:
+      app_net:
+        ipv4_address: 172.16.0.14
+
+
+  member1:
+    build:
+      context: .
+      dockerfile: docker_member/Dockerfile
+      args:
+        PARITY_VERSION: ${PARITY_VERSION}
+        NETWORK_NAME: ${NETWORK_NAME}
+    volumes:
+      - ./parity/config:/parity/config
+    command: --config /parity/config/member.toml
+      --no-persistent-txqueue
+      --tracing on
+      --pruning archive
+    networks:
+      app_net:
+        ipv4_address: 172.16.0.15
+
+volumes:
+  parity-data:
+networks:
+  app_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.0.1/24
+          gateway: 172.16.0.1
